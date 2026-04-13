@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: booxtation_mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - booxtation_network
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: booxtation_backend
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/booxtation
+      - NODE_ENV=development
+      - JWT_SECRET=your_jwt_secret
+    depends_on:
+      - mongodb
+    volumes:
+      - ./server:/app
+    networks:
+      - booxtation_network
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: booxtation_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://backend:5000
+    depends_on:
+      - backend
+    volumes:
+      - ./client:/app
+    networks:
+      - booxtation_network
+
+volumes:
+  mongodb_data:
+
+networks:
+  booxtation_network:
+    driver: bridge
